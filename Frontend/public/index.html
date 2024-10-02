@@ -1,0 +1,74 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Socket.IO Chat</title>
+    <style>
+        body {
+            background-color: #f4f4f9;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <h2 class="text-2xl font-bold mb-4">Socket.IO Chat</h2>
+    <label for="rooms" class="block mb-2">Choose a chat room:</label>
+    <select id="rooms" class="border p-2 mb-4">
+        <option value="General">General</option>
+        <option value="Sports">Sports</option>
+        <option value="Technology">Technology</option>
+        <option value="Music">Music</option>
+    </select>
+    <ul id="messages" class="list-none p-0 mb-4"></ul>
+    <form id="form" class="flex">
+        <input id="input" class="border p-2 flex-grow mr-2" autocomplete="off" placeholder="Type your message..." />
+        <button class="bg-blue-500 text-white p-2 rounded">Send</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Wrap the JavaScript code in a DOMContentLoaded event listener
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
+            let currentRoom = 'General';  // Default chat room
+
+            // Prompt user for their name
+            const userName = prompt("Please enter your name:") || "Anonymous";
+
+            const form = document.getElementById('form');
+            const input = document.getElementById('input');
+            const messages = document.getElementById('messages');
+            const roomsDropdown = document.getElementById('rooms');
+
+            // Join the default room initially
+            socket.emit('join room', currentRoom);
+
+            // Handle form submission
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (input.value) {
+                    socket.emit('chat message', { room: currentRoom, message: `${userName}: ${input.value}` });
+                    input.value = '';
+                }
+            });
+
+            // Listen for chat messages and append them to the message list
+            socket.on('chat message', (msg) => {
+                const item = document.createElement('li');
+                item.className = 'bg-blue-100 p-2 rounded my-1'; // Changed chat box color
+                item.textContent = msg;
+                messages.appendChild(item);
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+
+            // Handle room changes
+            roomsDropdown.addEventListener('change', (e) => {
+                const selectedRoom = e.target.value;
+                currentRoom = selectedRoom;
+                socket.emit('join room', currentRoom);  // Join new room
+            });
+        });
+    </script>
+</body>
+</html> -->
