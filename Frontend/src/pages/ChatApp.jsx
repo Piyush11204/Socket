@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Users, MessageSquare, LogOut } from 'lucide-react';
+import { Send, Users, MessageSquare, LogOut, User } from 'lucide-react';
 
 const ChatApp = ({ userName }) => {
   const [messages, setMessages] = useState([]);
@@ -62,7 +62,8 @@ const ChatApp = ({ userName }) => {
         </div>
         <div className="flex items-center">
           <Users className="mr-2" />
-          <span className="font-semibold">{onlineUsers} online</span>
+          <span className="font-semibold">{onlineUsers} online</span><br />
+          <span className="font-semibold">{showAlert} showAlert</span>
           
           
         </div>
