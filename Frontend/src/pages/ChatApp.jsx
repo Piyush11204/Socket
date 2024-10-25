@@ -1,22 +1,22 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Users, MessageSquare, LogOut, Volume2, Mic } from 'lucide-react';
+import { Send, Users, MessageSquare, LogOut, Volume2, Mic, MapPin, Image } from 'lucide-react';
 
 const ChatApp = ({ userName }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [currentRoom, setCurrentRoom] = useState('General');
   const [onlineUsers, setOnlineUsers] = useState(0);
-  const [isListening, setIsListening] = useState(false); // Speech recognition state
+  const [isListening, setIsListening] = useState(false);
+  const [imageURL, setImageURL] = useState(''); // State for image URL
   const messagesEndRef = useRef(null);
   const socket = useRef();
-  const recognitionRef = useRef(null); // Reference for speech recognition
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     socket.current = io('http://127.0.0.1:8000');
 
-    // Join the room after the socket connection is established
     socket.current.emit('join room', currentRoom);
 
     socket.current.on('chat message', (msg) => {
@@ -27,10 +27,8 @@ const ChatApp = ({ userName }) => {
       setOnlineUsers(count);
     });
 
-    // Initialize SpeechRecognition
     if (window.SpeechRecognition || window.webkitSpeechRecognition) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
@@ -38,7 +36,7 @@ const ChatApp = ({ userName }) => {
 
       recognitionRef.current.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        setInput(transcript); // Set the recognized speech to the input
+        setInput(transcript);
       };
     }
 
@@ -62,6 +60,14 @@ const ChatApp = ({ userName }) => {
     }
   };
 
+  const handleImageShare = () => {
+    if (imageURL.trim()) {
+      const message = `${userName} shared an image: <iframe src="${imageURL}" class="w-32 h-32 cursor-pointer" frameborder="0"></iframe>`;
+      socket.current.emit('chat message', { room: currentRoom, message });
+      setImageURL('');
+    }
+  };
+
   const handleTextToSpeech = (text) => {
     const utterance = new SpeechSynthesisUtterance(text);
     window.speechSynthesis.speak(utterance);
@@ -78,6 +84,37 @@ const ChatApp = ({ userName }) => {
     }
   };
 
+  const handleLocationShare = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          // Create an embedded Google Maps iframe using latitude and longitude
+          const locationMessage = `
+            ${userName} shared their location:
+            <iframe
+              src="https://www.google.com/maps?q=${latitude},${longitude}&z=15&output=embed"
+              width="400"
+              height="300"
+              frameborder="0"
+              style="border:0;"
+              allowfullscreen=""
+              aria-hidden="false"
+              tabindex="0"
+              class="mt-2 w-full max-w-lg"
+            ></iframe>
+          `;
+          socket.current.emit('chat message', { room: currentRoom, message: locationMessage });
+        },
+        (error) => {
+          alert('Unable to fetch your location.');
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by your browser.');
+    }
+  };
+  
   return (
     <div className="flex flex-col h-screen bg-gradient-to-b from-blue-100 to-blue-300 p-6">
       <h2 className="text-4xl font-extrabold text-center mb-8 text-blue-700">
@@ -108,9 +145,8 @@ const ChatApp = ({ userName }) => {
                 className={`p-3 rounded-lg my-2 shadow-md ${
                   index % 2 === 0 ? 'bg-blue-100 self-end' : 'bg-gray-200 self-start'
                 }`}
-              >
-                {msg}
-              </motion.div>
+                dangerouslySetInnerHTML={{ __html: msg }} // Use this to render the HTML iframe
+              />
             ))}
           </AnimatePresence>
           <div ref={messagesEndRef} />
@@ -141,6 +177,24 @@ const ChatApp = ({ userName }) => {
               <Send size={20} />
             </button>
           </form>
+
+          {/* Image Sharing Input and Button */}
+          <div className="flex mt-4">
+            <input
+              type="url"
+              className="flex-grow border border-gray-300 rounded-l-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Paste image URL here..."
+              value={imageURL}
+              onChange={(e) => setImageURL(e.target.value)}
+            />
+            <button
+              onClick={handleImageShare}
+              className="bg-gradient-to-r from-green-500 to-green-700 text-white p-2 rounded-r-lg hover:bg-green-600 transition duration-300 ease-in-out flex items-center"
+            >
+              <Image size={20} className="mr-2" />
+              Share Image
+            </button>
+          </div>
         </div>
       </div>
 
@@ -162,20 +216,18 @@ const ChatApp = ({ userName }) => {
           <Mic size={20} className="mr-2" />
           {isListening ? 'Listening...' : 'Start Speaking'}
         </button>
-      </div>
 
-      <button
-        onClick={() => {
-          socket.current.disconnect();
-          window.location.reload();
-        }}
-        className="mt-4 bg-gradient-to-r from-red-500 to-red-700 text-white p-3 rounded-lg hover:bg-red-600 transition duration-300 ease-in-out flex items-center justify-center shadow-lg"
-      >
-        <LogOut size={20} className="mr-2" />
-        Leave Chat
-      </button>
+        <button
+          onClick={handleLocationShare}
+          className="bg-gradient-to-r from-purple-500 to-purple-700 text-white p-3 rounded-lg hover:bg-purple-600 transition duration-300 ease-in-out flex items-center justify-center shadow-lg"
+        >
+          <MapPin size={20} className="mr-2" />
+          Share Location
+        </button>
+      </div>
     </div>
   );
 };
 
 export default ChatApp;
+
